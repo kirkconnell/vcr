@@ -8,7 +8,7 @@ module VCR
     attr_reader :request, :match_attributes
 
     def initialize(request = nil, match_attributes = [])
-      if (match_attributes - VALID_MATCH_ATTRIBUTES).size > 0
+      if (match_attributes - (VALID_MATCH_ATTRIBUTES + VCR::Config.custom_matcher_names)).size > 0
         raise ArgumentError.new("The only valid match_attributes options are: #{VALID_MATCH_ATTRIBUTES.inspect}.  You passed: #{match_attributes.inspect}.")
       end
 
@@ -60,9 +60,7 @@ module VCR
     end
 
     def ==(other)
-      %w( class match_attributes method uri headers body ).all? do |attr|
-        send(attr) == other.send(attr)
-      end
+      all_attributes_matched?(other) && all_custom_matchers_matched?(other)
     end
 
     def hash
@@ -73,6 +71,22 @@ module VCR
     end
 
     private
+
+      def all_attributes_matched?(other)
+        %w( class match_attributes method uri headers body ).all? do |attr|
+          send(attr) == other.send(attr)
+        end
+      end
+
+      def all_custom_matchers_matched?(other)
+        match_attributes.all? do |attr|
+          if VCR::Config.custom_matchers[attr]
+            VCR::Config.custom_matchers[attr].call(self.request, other.request)
+          else
+            true
+          end
+        end
+      end
 
       def set(*elements)
         Set.new(elements.flatten)

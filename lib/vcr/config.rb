@@ -73,6 +73,18 @@ module VCR
       uri = URI.parse(uri) unless uri.respond_to?(:host)
       ignored_hosts.include?(uri.host)
     end
+
+    def custom_matchers
+      @custom_matchers ||= {}
+    end
+
+    def custom_matcher(name, &block)
+      custom_matchers[name] = block
+    end
+
+    def custom_matcher_names
+      custom_matchers.keys
+    end
   end
 end
 

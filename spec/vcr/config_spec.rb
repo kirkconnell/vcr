@@ -178,4 +178,26 @@ describe VCR::Config do
       yielded_interaction.should equal(interaction)
     end
   end
+
+  describe ".custom_matcher" do
+    after(:each) do
+      VCR::Config.custom_matchers.clear
+    end
+
+    it "stores a matching block on the custom_matchers list" do
+      VCR::Config.custom_matcher(:matcher_name) { |r1, r2| r1 == r2 }
+      VCR::Config.custom_matchers[:matcher_name].should_not be_nil
+    end
+
+    it "makes the name of the custom matcher available throught the custom_matcher_name list" do
+      VCR::Config.custom_matcher(:matcher_name) { |r1, r2| r1 == r2 }
+      VCR::Config.custom_matcher_names.should eq([:matcher_name])
+    end
+  end
+
+  describe ".custom_matcher_name" do
+    it "returns an empty list if no custom matcher has been defined" do
+      VCR::Config.custom_matcher_names.should eq([])
+    end
+  end
 end

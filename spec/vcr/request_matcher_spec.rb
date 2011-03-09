@@ -227,4 +227,37 @@ describe VCR::RequestMatcher do
       end
     end
   end
+
+  context "with a custom matchers configured" do
+    before(:each) do
+      VCR::Config.stub(:custom_matchers).and_return({:custom => lambda { |r1, r2| true }})
+    end
+
+    def custom_matcher(*matcher_names)
+      VCR::RequestMatcher.new(VCR::Request.new(:get, 'http://foo.com/', 'bar', nil), matcher_names)
+    end
+
+    it "accepts the custom matcher as a valid match attribute" do
+      expect{
+        VCR::RequestMatcher.new(VCR::Request.new, [:custom])
+      }.to_not raise_error(ArgumentError)
+    end
+
+    [:eql?, :==].each do |equality_method|
+      describe "##{equality_method.to_s}" do
+        it "returns true when the matchers are the same and the match block is true" do
+          m1, m2 = custom_matcher(:custom), custom_matcher(:custom)
+          m1.send(equality_method, m2).should be_true
+          m2.send(equality_method, m1).should be_true
+        end
+
+        it "returns false when the matchers are the same and the match block is false" do
+          VCR::Config.stub(:custom_matchers).and_return({:custom => lambda { |r1, r2| false }})
+          m1, m2 = custom_matcher(:custom), custom_matcher(:custom)
+          m1.send(equality_method, m2).should be_false
+          m2.send(equality_method, m1).should be_false
+        end
+      end
+    end
+  end
 end
